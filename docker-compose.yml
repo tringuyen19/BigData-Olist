@@ -1,0 +1,102 @@
+services:
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    ports:
+      - "9870:9870"
+      - "8020:8020"
+    environment:
+      - CLUSTER_NAME=bigdata-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_namenode_rpc___address=namenode:8020
+      - HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+
+  datanode1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode1
+    depends_on:
+      - namenode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+      - SERVICE_PRECONDITION=namenode:9870
+    volumes:
+      - hadoop_datanode1:/hadoop/dfs/data
+
+  datanode2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode2
+    depends_on:
+      - namenode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+      - SERVICE_PRECONDITION=namenode:9870
+    volumes:
+      - hadoop_datanode2:/hadoop/dfs/data
+
+  datanode3:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode3
+    depends_on:
+      - namenode
+    environment:
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:8020
+      - HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
+      - SERVICE_PRECONDITION=namenode:9870
+    volumes:
+      - hadoop_datanode3:/hadoop/dfs/data
+
+  spark-master:
+    image: apache/spark:3.5.1
+    container_name: spark-master
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+    volumes:
+      - .:/workspace
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+    command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0 --port 7077 --webui-port 8080
+
+  postgres:
+    image: postgres:16
+    container_name: analytics-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=olist_dw
+      - POSTGRES_USER=superset
+      - POSTGRES_PASSWORD=123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superset -d olist_dw"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  superset:
+    build:
+      context: ./superset
+    container_name: superset
+    ports:
+      - "8088:8088"
+    environment:
+      - SUPERSET_SECRET_KEY=bigdata2024secretkey
+    volumes:
+      - superset_data:/app/superset_home
+    depends_on:
+      - namenode
+      - postgres
+
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode1:
+  hadoop_datanode2:
+  hadoop_datanode3:
+  postgres_data:
+  superset_data:
