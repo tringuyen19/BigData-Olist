@@ -1,5 +1,12 @@
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config.pipeline_config import BRONZE_PATHS, SILVER_PATHS
 
 spark = SparkSession.builder \
     .appName("ETL_Geolocation_Silver") \
@@ -7,22 +14,20 @@ spark = SparkSession.builder \
 
 spark.sparkContext.setLogLevel("WARN")
 
-RAW_PATH = \
-"hdfs://namenode:8020/raw/olist/olist_geolocation_dataset.csv"
+BRONZE_PATH = \
+BRONZE_PATHS["geolocation"]
 
 SILVER_PATH = \
-"hdfs://namenode:8020/processed/olist/geolocation"
+SILVER_PATHS["geolocation"]
 
 # =====================================
 # Read Bronze
 # =====================================
 
 geo = spark.read \
-    .option("header", "true") \
-    .option("inferSchema", "true") \
-    .csv(RAW_PATH)
+    .parquet(BRONZE_PATH)
 
-print("===== RAW =====")
+print("===== BRONZE =====")
 print(f"Rows: {geo.count()}")
 
 # =====================================

@@ -1,5 +1,12 @@
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config.pipeline_config import BRONZE_PATHS, ETL_CONTROL_PATH, SILVER_PATHS
 
 # =====================================
 # Spark Session
@@ -15,21 +22,19 @@ spark.sparkContext.setLogLevel("WARN")
 # Paths
 # =====================================
 
-RAW_PATH = "hdfs://namenode:8020/raw/olist/olist_orders_dataset.csv"
+BRONZE_PATH = BRONZE_PATHS["orders"]
 
-SILVER_PATH = "hdfs://namenode:8020/processed/olist/orders"
+SILVER_PATH = SILVER_PATHS["orders"]
 
-CONTROL_PATH = "hdfs://namenode:8020/metadata/etl_control"
+CONTROL_PATH = ETL_CONTROL_PATH
 # =====================================
 # Read Bronze
 # =====================================
 
 orders = spark.read \
-    .option("header", "true") \
-    .option("inferSchema", "true") \
-    .csv(RAW_PATH)
+    .parquet(BRONZE_PATH)
 
-print("===== RAW =====")
+print("===== BRONZE =====")
 print(f"Rows: {orders.count()}")
 orders.printSchema()
 
@@ -230,24 +235,60 @@ max_ts = (
     .collect()[0][0]
 )
 
-new_control = spark.createDataFrame(
+max_ts_str = max_ts.strftime("%Y-%m-%d %H:%M:%S")
 
-    [
-        ("orders", max_ts)
-    ],
+control_rows = spark.read.parquet(
+    CONTROL_PATH
+).collect()
 
+new_data = []
+orders_control_found = False
+
+for row in control_rows:
+
+    if row["table_name"] == "orders":
+
+        new_data.append(
+            (
+                "orders",
+                max_ts_str
+            )
+        )
+
+        orders_control_found = True
+
+    else:
+
+        new_data.append(
+            (
+                row["table_name"],
+                row["last_processed_ts"]
+            )
+        )
+
+if not orders_control_found:
+
+    new_data.append(
+        (
+            "orders",
+            max_ts_str
+        )
+    )
+
+final_control = spark.createDataFrame(
+    new_data,
     [
         "table_name",
         "last_processed_ts"
     ]
 )
 
-new_control.write \
+final_control.write \
     .mode("overwrite") \
     .parquet(CONTROL_PATH)
 
 print(
-    f"ETL Control Updated: {max_ts}"
+    f"Orders ETL Control Updated: {max_ts_str}"
 )
 
 spark.stop()

@@ -1,5 +1,16 @@
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+from config.pipeline_config import (
+    GOLD_DIMENSION_PATHS,
+    GOLD_FACT_PATHS,
+    SILVER_PATHS,
+)
 
 spark = SparkSession.builder \
     .appName("Gold_Fact_Sales") \
@@ -12,31 +23,31 @@ spark.sparkContext.setLogLevel("WARN")
 # =====================================
 
 ORDERS_PATH = \
-"hdfs://namenode:8020/processed/olist/orders"
+SILVER_PATHS["orders"]
 
 ITEMS_PATH = \
-"hdfs://namenode:8020/processed/olist/order_items"
+SILVER_PATHS["order_items"]
 
 PAYMENTS_PATH = \
-"hdfs://namenode:8020/processed/olist/payments"
+SILVER_PATHS["payments"]
 
 REVIEWS_PATH = \
-"hdfs://namenode:8020/processed/olist/reviews"
+SILVER_PATHS["reviews"]
 
 DIM_CUSTOMER_PATH = \
-"hdfs://namenode:8020/gold/dimensions/dim_customer"
+GOLD_DIMENSION_PATHS["dim_customer"]
 
 DIM_PRODUCT_PATH = \
-"hdfs://namenode:8020/gold/dimensions/dim_product"
+GOLD_DIMENSION_PATHS["dim_product"]
 
 DIM_SELLER_PATH = \
-"hdfs://namenode:8020/gold/dimensions/dim_seller"
+GOLD_DIMENSION_PATHS["dim_seller"]
 
 DIM_DATE_PATH = \
-"hdfs://namenode:8020/gold/dimensions/dim_date"
+GOLD_DIMENSION_PATHS["dim_date"]
 
 FACT_PATH = \
-"hdfs://namenode:8020/gold/facts/fact_sales"
+GOLD_FACT_PATHS["fact_sales"]
 
 # =====================================
 # Read

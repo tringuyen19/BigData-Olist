@@ -1,42 +1,20 @@
 from pyspark.sql import SparkSession
 
+from config.pipeline_config import (
+    POSTGRES_DRIVER,
+    POSTGRES_EXPORT_TABLES,
+    POSTGRES_JDBC_URL,
+    POSTGRES_PASSWORD,
+    POSTGRES_USER,
+)
+
 spark = SparkSession.builder \
     .appName("Export_To_Postgres") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
 
-jdbc_url = \
-"jdbc:postgresql://analytics-postgres:5432/olist_dw"
-
-properties = {
-    "user": "superset",
-    "password": "123",
-    "driver": "org.postgresql.Driver"
-}
-
-tables = {
-
-    "dim_customer":
-    "hdfs://namenode:8020/gold/dimensions/dim_customer",
-
-    "dim_product":
-    "hdfs://namenode:8020/gold/dimensions/dim_product",
-
-    "dim_seller":
-    "hdfs://namenode:8020/gold/dimensions/dim_seller",
-
-    "dim_date":
-    "hdfs://namenode:8020/gold/dimensions/dim_date",
-
-    "dim_location":
-    "hdfs://namenode:8020/gold/dimensions/dim_location",
-
-    "fact_sales":
-    "hdfs://namenode:8020/gold/facts/fact_sales"
-}
-
-for table_name, path in tables.items():
+for table_name, path in POSTGRES_EXPORT_TABLES.items():
 
     print(f"Exporting {table_name}")
 
@@ -44,11 +22,11 @@ for table_name, path in tables.items():
 
     df.write \
         .format("jdbc") \
-        .option("url", jdbc_url) \
+        .option("url", POSTGRES_JDBC_URL) \
         .option("dbtable", table_name) \
-        .option("user", "superset") \
-        .option("password", "123") \
-        .option("driver", "org.postgresql.Driver") \
+        .option("user", POSTGRES_USER) \
+        .option("password", POSTGRES_PASSWORD) \
+        .option("driver", POSTGRES_DRIVER) \
         .mode("overwrite") \
         .save()
 

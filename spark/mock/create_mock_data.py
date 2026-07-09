@@ -1,18 +1,26 @@
-# create_mock_data.py
-from pyspark.sql import SparkSession
-from pyspark.sql.types import *
 import random
+import sys
+from pathlib import Path
 
-# Khởi động Spark local — dùng WSL Spark, không cần cluster
+from pyspark.sql import SparkSession
+from pyspark.sql.types import DoubleType
+from pyspark.sql.types import IntegerType
+from pyspark.sql.types import StringType
+from pyspark.sql.types import StructField
+from pyspark.sql.types import StructType
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config.pipeline_config import HDFS_BASE, MOCK_GOLD_PATH
+
 spark = SparkSession.builder \
     .appName("MockData") \
     .master("local[*]") \
-    .config("spark.hadoop.fs.defaultFS", "hdfs://namenode:8020") \
+    .config("spark.hadoop.fs.defaultFS", HDFS_BASE) \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
 
-# Data giả mô phỏng Olist
 CATEGORIES = ["electronics", "furniture", "toys", "fashion", "food"]
 STATES = ["SP", "RJ", "MG", "RS", "PR"]
 
@@ -32,25 +40,23 @@ for i in range(500):
     ))
 
 schema = StructType([
-    StructField("order_id",       StringType(),  False),
-    StructField("customer_id",    StringType(),  True),
-    StructField("product_id",     StringType(),  True),
-    StructField("category",       StringType(),  True),
-    StructField("price",          DoubleType(),  True),
-    StructField("delivery_days",  IntegerType(), True),
-    StructField("review_score",   IntegerType(), True),
-    StructField("year",           IntegerType(), True),
-    StructField("month",          IntegerType(), True),
-    StructField("customer_state", StringType(),  True),
+    StructField("order_id", StringType(), False),
+    StructField("customer_id", StringType(), True),
+    StructField("product_id", StringType(), True),
+    StructField("category", StringType(), True),
+    StructField("price", DoubleType(), True),
+    StructField("delivery_days", IntegerType(), True),
+    StructField("review_score", IntegerType(), True),
+    StructField("year", IntegerType(), True),
+    StructField("month", IntegerType(), True),
+    StructField("customer_state", StringType(), True),
 ])
 
 df = spark.createDataFrame(data, schema)
 
-# Ghi ra thư mục mock_gold/
-df.write.mode("overwrite").parquet(
-    "hdfs://namenode:8020/gold/orders_mock/"
-)
-print("✅ Tạo mock data xong!")
+df.write.mode("overwrite").parquet(MOCK_GOLD_PATH)
+
+print("Mock data created")
 df.show(5)
 
 spark.stop()

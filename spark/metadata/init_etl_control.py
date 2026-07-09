@@ -1,4 +1,11 @@
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
+
+from config.pipeline_config import ETL_CONTROL_PATH
 
 spark = SparkSession.builder \
     .appName("Init_ETL_Control") \
@@ -28,7 +35,7 @@ df = spark.createDataFrame(
 df.write \
     .mode("overwrite") \
     .parquet(
-        "hdfs://namenode:8020/metadata/etl_control"
+        ETL_CONTROL_PATH
     )
 
 spark.stop()

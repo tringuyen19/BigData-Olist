@@ -1,5 +1,12 @@
+import sys
+from pathlib import Path
+
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
+
+sys.path.append(str(Path(__file__).resolve().parents[2]))
+
+from config.pipeline_config import GOLD_DIMENSION_PATHS, SILVER_PATHS
 
 spark = SparkSession.builder \
     .appName("Gold_Dim_Customer") \
@@ -12,10 +19,10 @@ spark.sparkContext.setLogLevel("WARN")
 # =====================================
 
 SILVER_PATH = \
-"hdfs://namenode:8020/processed/olist/customers"
+SILVER_PATHS["customers"]
 
 GOLD_PATH = \
-"hdfs://namenode:8020/gold/dimensions/dim_customer"
+GOLD_DIMENSION_PATHS["dim_customer"]
 
 # =====================================
 # Read Silver

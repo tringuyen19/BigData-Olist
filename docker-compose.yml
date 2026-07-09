@@ -59,6 +59,12 @@ services:
       - .:/workspace
     environment:
       - SPARK_NO_DAEMONIZE=true
+      - HDFS_BASE=${HDFS_BASE}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     command: /opt/spark/bin/spark-class org.apache.spark.deploy.master.Master --host 0.0.0.0 --port 7077 --webui-port 8080
 
   postgres:
@@ -67,13 +73,13 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_DB=olist_dw
-      - POSTGRES_USER=superset
-      - POSTGRES_PASSWORD=123
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U superset -d olist_dw"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -85,7 +91,7 @@ services:
     ports:
       - "8088:8088"
     environment:
-      - SUPERSET_SECRET_KEY=bigdata2024secretkey
+      - SUPERSET_SECRET_KEY=${SUPERSET_SECRET_KEY}
     volumes:
       - superset_data:/app/superset_home
     depends_on:
